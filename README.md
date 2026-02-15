@@ -1,7 +1,9 @@
 # Hotel Booking Mobile App
 
 A modern, cross-platform mobile application for browsing and booking hotels, built with React Native and Expo.
-**Design Reference:** [Hotel Booking Mobile App - Dribbble](https://dribbble.com/shots/26519070-Grandhaven-Hotel-Booking-App-Design)
+
+**Design Reference:** 
+[Hotel Booking Mobile App - Dribbble](https://dribbble.com/shots/26519070-Grandhaven-Hotel-Booking-App-Design)
 
 ## 🚀 Getting Started
 

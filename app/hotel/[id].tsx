@@ -1,425 +1,143 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  StatusBar,
-  Alert,
-  Pressable,
-  ActivityIndicator,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, StatusBar, Pressable, Image, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { ImageGallery } from '../../components/organisms/ImageGallery';
-import { Button } from '../../components/atoms/Button';
-import { Rating } from '../../components/atoms/Rating';
-import { Icon } from '../../components/atoms/Icon';
-import { AmenityChip } from '../../components/molecules/AmenityChip';
-import { DatePicker } from '../../components/molecules/DatePicker';
-import { getHotelById } from '../../services/hotelService';
-import { saveBooking } from '../../services/storageService';
-import { scheduleBookingConfirmation, scheduleCheckInReminder } from '../../services/notificationService';
-import { Hotel, Booking } from '../../types/hotel';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/theme';
+
+const { width } = Dimensions.get('window');
+
+const HOTELS: Record<string, any> = {
+  '1': { name: 'Santorini', location: 'Greece', price: 488, rating: 4.9, reviews: 128, image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800', description: 'Luxury hotel with Aegean Sea views.', amenities: ['WiFi', 'Pool', 'Spa', 'Restaurant', 'Bar', 'Gym'] },
+  '2': { name: 'Hotel Royal', location: 'Spain', price: 280, rating: 4.8, reviews: 95, image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800', description: 'Elegant hotel in Barcelona.', amenities: ['WiFi', 'Pool', 'Restaurant', 'Bar', 'Parking'] },
+  '3': { name: 'BaLi Motel Vung Tau', location: 'Indonesia', price: 580, rating: 4.9, reviews: 156, image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800', description: 'Tropical paradise with ocean views.', amenities: ['WiFi', 'Pool', 'Spa', 'Restaurant', 'Beach', 'Gym'] },
+};
 
 export default function HotelDetails() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
-  const [hotel, setHotel] = useState<Hotel | null>(null);
-  const [checkIn, setCheckIn] = useState('Dec 20, 2024');
-  const [checkOut, setCheckOut] = useState('Dec 25, 2024');
   const [guests, setGuests] = useState(2);
-  const [loading, setLoading] = useState(false);
-  const [customImages, setCustomImages] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (id) {
-      const hotelData = getHotelById(id as string);
-      setHotel(hotelData || null);
-    }
-  }, [id]);
-
-  const handleBooking = async () => {
-    if (!hotel) return;
-
-    try {
-      setLoading(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      const nights = 5;
-      const totalPrice = hotel.price * nights;
-
-      const booking: Booking = {
-        id: Date.now().toString(),
-        hotelId: hotel.id,
-        hotelName: hotel.name,
-        checkIn,
-        checkOut,
-        guests,
-        totalPrice,
-        createdAt: new Date().toISOString(),
-      };
-
-      await saveBooking(booking);
-      await scheduleBookingConfirmation(hotel.name, checkIn);
-      await scheduleCheckInReminder(hotel.name, checkIn);
-
-      Alert.alert(
-        'Booking Confirmed!',
-        `Your reservation at ${hotel.name} has been confirmed.\n\nCheck-in: ${checkIn}\nCheck-out: ${checkOut}\nGuests: ${guests}\nTotal: $${totalPrice}`,
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to complete booking. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddImage = (uri: string) => {
-    setCustomImages([...customImages, uri]);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert('Success', 'Photo added to gallery!');
-  };
-
-  const handleDatePress = (type: 'checkIn' | 'checkOut') => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert('Date Picker', `Select ${type === 'checkIn' ? 'check-in' : 'check-out'} date`, [
-      { text: 'Cancel', style: 'cancel' },
-    ]);
-  };
-
-  const handleGuestsChange = (increment: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setGuests((prev) => {
-      const newValue = increment ? prev + 1 : prev - 1;
-      return Math.max(1, Math.min(10, newValue));
-    });
-  };
-
-  if (!hotel) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.errorContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.errorText}>Loading hotel...</Text>
-        </View>
-      </View>
-    );
-  }
-
-  const allImages = [...hotel.gallery, ...customImages];
+  const hotel = HOTELS[id as string] || HOTELS['3'];
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-
-      {/* Floating header buttons */}
-      <View style={[styles.floatingHeader, { top: insets.top + 8 }]}>
-        <Pressable style={styles.headerBtn} onPress={() => router.back()}>
-          <Icon name="arrow-back" size={22} color={Colors.white} />
-        </Pressable>
-        <Pressable style={styles.headerBtn}>
-          <Icon name="share-outline" size={22} color={Colors.white} />
-        </Pressable>
-      </View>
-
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" />
       <ScrollView showsVerticalScrollIndicator={false}>
-        <ImageGallery images={allImages} onAddImage={handleAddImage} />
-
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: hotel.image }} style={styles.headerImage} />
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </Pressable>
+          <Pressable style={styles.favoriteButton}>
+            <Ionicons name="heart-outline" size={24} color={Colors.textPrimary} />
+          </Pressable>
+        </View>
         <View style={styles.content}>
-          {/* Title & Rating Row */}
-          <View style={styles.titleRow}>
-            <View style={styles.titleLeft}>
-              <Text style={styles.name}>{hotel.name}</Text>
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.hotelName}>{hotel.name}</Text>
               <View style={styles.locationRow}>
-                <Icon name="location-outline" size={16} color={Colors.primary} />
+                <Ionicons name="location-outline" size={16} color={Colors.textSecondary} />
                 <Text style={styles.location}>{hotel.location}</Text>
               </View>
             </View>
-            <View style={styles.ratingBox}>
-              <Icon name="star" size={16} color={Colors.star} />
-              <Text style={styles.ratingText}>{hotel.rating}</Text>
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={16} color={Colors.star} />
+              <Text style={styles.rating}>{hotel.rating}</Text>
+              <Text style={styles.reviews}>({hotel.reviews})</Text>
             </View>
           </View>
-
-          {/* Reviews count */}
-          <Text style={styles.reviewCount}>{hotel.reviews.toLocaleString()} reviews</Text>
-
-          {/* Divider */}
-          <View style={styles.divider} />
-
-          {/* Description */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About</Text>
             <Text style={styles.description}>{hotel.description}</Text>
           </View>
-
-          {/* Amenities */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Amenities</Text>
-            <View style={styles.amenitiesContainer}>
-              {hotel.amenities.map((amenity, index) => (
-                <AmenityChip key={index} amenity={amenity} />
+            <View style={styles.amenitiesGrid}>
+              {hotel.amenities.map((amenity: string, index: number) => (
+                <View key={index} style={styles.amenityChip}>
+                  <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
+                  <Text style={styles.amenityText}>{amenity}</Text>
+                </View>
               ))}
             </View>
           </View>
-
-          {/* Divider */}
-          <View style={styles.divider} />
-
-          {/* Booking Details */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Booking Details</Text>
-            <View style={styles.dateContainer}>
-              <View style={styles.dateItem}>
-                <DatePicker
-                  label="Check-in"
-                  date={checkIn}
-                  onPress={() => handleDatePress('checkIn')}
-                />
+            <View style={styles.dateRow}>
+              <View style={styles.dateCard}>
+                <Text style={styles.dateLabel}>Check In</Text>
+                <Text style={styles.dateValue}>Dec 20</Text>
               </View>
-              <View style={styles.dateItem}>
-                <DatePicker
-                  label="Check-out"
-                  date={checkOut}
-                  onPress={() => handleDatePress('checkOut')}
-                />
+              <View style={styles.dateCard}>
+                <Text style={styles.dateLabel}>Check Out</Text>
+                <Text style={styles.dateValue}>Dec 25</Text>
               </View>
             </View>
-
-            <View style={styles.guestsContainer}>
-              <View style={styles.guestsLabelRow}>
-                <Icon name="people-outline" size={20} color={Colors.primary} />
-                <Text style={styles.guestsLabel}>Guests</Text>
-              </View>
-              <View style={styles.guestsControls}>
-                <Pressable
-                  style={styles.guestsButton}
-                  onPress={() => handleGuestsChange(false)}
-                >
-                  <Icon name="remove" size={18} color={Colors.primary} />
+            <View style={styles.guestsCard}>
+              <Text style={styles.guestsLabel}>Guests</Text>
+              <View style={styles.guestsControl}>
+                <Pressable style={styles.guestsButton} onPress={() => setGuests(Math.max(1, guests - 1))}>
+                  <Ionicons name="remove" size={20} color={Colors.textPrimary} />
                 </Pressable>
                 <Text style={styles.guestsValue}>{guests}</Text>
-                <Pressable
-                  style={styles.guestsButton}
-                  onPress={() => handleGuestsChange(true)}
-                >
-                  <Icon name="add" size={18} color={Colors.primary} />
+                <Pressable style={styles.guestsButton} onPress={() => setGuests(Math.min(10, guests + 1))}>
+                  <Ionicons name="add" size={20} color={Colors.textPrimary} />
                 </Pressable>
               </View>
             </View>
           </View>
         </View>
       </ScrollView>
-
-      {/* Footer */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <View style={styles.priceSection}>
-          <Text style={styles.priceLabel}>Total (5 nights)</Text>
-          <Text style={styles.price}>${hotel.price * 5}</Text>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
+        <View style={styles.priceContainer}>
+          <Text style={styles.priceLabel}>Price</Text>
+          <Text style={styles.price}>${hotel.price}/night</Text>
         </View>
-        <Button
-          title="Book Now"
-          onPress={handleBooking}
-          loading={loading}
-          fullWidth
-        />
+        <Pressable style={styles.bookButton} onPress={() => alert('Booking confirmed!')}>
+          <Text style={styles.bookButtonText}>Book Now</Text>
+        </Pressable>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  // Floating header
-  floatingHeader: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-  },
-  headerBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Content
-  content: {
-    padding: Spacing.xl,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.sm,
-  },
-  titleLeft: {
-    flex: 1,
-    marginRight: Spacing.md,
-  },
-  name: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    marginBottom: 6,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  location: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-  },
-  ratingBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.primaryMuted,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.md,
-    gap: 6,
-  },
-  ratingText: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    color: Colors.primary,
-  },
-  reviewCount: {
-    fontSize: FontSize.sm,
-    color: Colors.textMuted,
-    marginBottom: Spacing.lg,
-  },
-  // Divider
-  divider: {
-    height: 1,
-    backgroundColor: Colors.border,
-    marginVertical: Spacing.xl,
-  },
-  // Sections
-  section: {
-    marginBottom: Spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.md,
-  },
-  description: {
-    fontSize: FontSize.md,
-    lineHeight: 24,
-    color: Colors.textSecondary,
-  },
-  amenitiesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  // Dates
-  dateContainer: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  dateItem: {
-    flex: 1,
-  },
-  // Guests
-  guestsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  guestsLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  guestsLabel: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
-    color: Colors.textPrimary,
-  },
-  guestsControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.lg,
-  },
-  guestsButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(200, 164, 92, 0.3)',
-  },
-  guestsValue: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    minWidth: 30,
-    textAlign: 'center',
-  },
-  // Footer
-  footer: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    backgroundColor: Colors.surface,
-    gap: Spacing.md,
-  },
-  priceSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  priceLabel: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-  },
-  price: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.primary,
-  },
-  // Error
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.xxxl,
-    gap: Spacing.lg,
-  },
-  errorText: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  imageContainer: { width: width, height: 300, position: 'relative' },
+  headerImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  backButton: { position: 'absolute', top: 16, left: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center', elevation: 3 },
+  favoriteButton: { position: 'absolute', top: 16, right: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center', elevation: 3 },
+  content: { padding: Spacing.xl },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Spacing.xxl },
+  headerLeft: { flex: 1 },
+  hotelName: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold, color: Colors.textPrimary, marginBottom: 8 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  location: { fontSize: FontSize.md, color: Colors.textSecondary },
+  ratingContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primaryMuted, paddingHorizontal: 12, paddingVertical: 6, borderRadius: BorderRadius.lg, gap: 4 },
+  rating: { fontSize: FontSize.md, fontWeight: FontWeight.semibold, color: Colors.textPrimary },
+  reviews: { fontSize: FontSize.sm, color: Colors.textSecondary },
+  section: { marginBottom: Spacing.xxl },
+  sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary, marginBottom: Spacing.md },
+  description: { fontSize: FontSize.md, color: Colors.textSecondary, lineHeight: 22 },
+  amenitiesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  amenityChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, paddingHorizontal: 12, paddingVertical: 8, borderRadius: BorderRadius.lg, gap: 6, borderWidth: 1, borderColor: Colors.border },
+  amenityText: { fontSize: FontSize.sm, color: Colors.textPrimary, fontWeight: FontWeight.medium },
+  dateRow: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.md },
+  dateCard: { flex: 1, backgroundColor: Colors.surface, padding: Spacing.lg, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border },
+  dateLabel: { fontSize: FontSize.sm, color: Colors.textSecondary, marginBottom: 4 },
+  dateValue: { fontSize: FontSize.lg, fontWeight: FontWeight.semibold, color: Colors.textPrimary },
+  guestsCard: { backgroundColor: Colors.surface, padding: Spacing.lg, borderRadius: BorderRadius.lg, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
+  guestsLabel: { fontSize: FontSize.md, color: Colors.textPrimary, fontWeight: FontWeight.medium },
+  guestsControl: { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },
+  guestsButton: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
+  guestsValue: { fontSize: FontSize.lg, fontWeight: FontWeight.semibold, color: Colors.textPrimary, minWidth: 30, textAlign: 'center' },
+  bottomBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, backgroundColor: Colors.surface, borderTopWidth: 1, borderTopColor: Colors.border, elevation: 8 },
+  priceContainer: { flex: 1 },
+  priceLabel: { fontSize: FontSize.sm, color: Colors.textSecondary, marginBottom: 4 },
+  price: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, color: Colors.textPrimary },
+  bookButton: { backgroundColor: Colors.primary, paddingHorizontal: 32, paddingVertical: 16, borderRadius: BorderRadius.lg, elevation: 4 },
+  bookButtonText: { fontSize: FontSize.lg, fontWeight: FontWeight.semibold, color: Colors.white },
 });

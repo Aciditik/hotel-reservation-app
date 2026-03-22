@@ -1,36 +1,39 @@
 export const Colors = {
   // Primary backgrounds
-  background: '#0F1B2D',
-  surface: '#1A2A3F',
-  surfaceLight: '#243447',
-  card: '#1E2D42',
-  cardLight: '#253A52',
+  background: '#F5F7FA',
+  surface: '#FFFFFF',
+  surfaceLight: '#FAFBFC',
+  card: '#FFFFFF',
+  cardLight: '#F9FAFB',
 
-  // Accent
-  primary: '#C8A45C',
-  primaryLight: '#D4B76A',
-  primaryDark: '#B08D3E',
-  primaryMuted: 'rgba(200, 164, 92, 0.15)',
+  // Accent - Blue theme from the design
+  primary: '#4A9FF5',
+  primaryLight: '#6BB3F7',
+  primaryDark: '#3A8FE5',
+  primaryMuted: 'rgba(74, 159, 245, 0.1)',
 
   // Text
-  textPrimary: '#FFFFFF',
-  textSecondary: '#8A9BB5',
-  textMuted: '#5A6E87',
-  textDark: '#0F1B2D',
+  textPrimary: '#1A1A1A',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  textDark: '#000000',
 
   // Status
-  success: '#4CAF50',
-  error: '#FF5252',
-  warning: '#FFC107',
-  favorite: '#FF5252',
+  success: '#10B981',
+  error: '#EF4444',
+  warning: '#F59E0B',
+  favorite: '#EF4444',
+  discount: '#FF6B6B',
 
   // Misc
-  border: '#2A3D55',
-  overlay: 'rgba(15, 27, 45, 0.7)',
+  border: '#E5E7EB',
+  overlay: 'rgba(0, 0, 0, 0.5)',
   shadow: '#000000',
-  star: '#FFD700',
+  star: '#FBBF24',
   white: '#FFFFFF',
   black: '#000000',
+  gray: '#F3F4F6',
+  lightGray: '#F9FAFB',
 };
 
 export const Spacing = {

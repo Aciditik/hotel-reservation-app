@@ -52,7 +52,7 @@ const HOT_DEALS = [
   },
 ];
 
-export default function Index() {
+export default function Home() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState('hotel');
